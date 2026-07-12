@@ -1,0 +1,14 @@
+{
+  "name": "ningenllm-project",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n humanllm,webui -c cyan,magenta \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm --prefix humanllm run dev",
+    "dev:client": "cross-env DATA_DIR=C:/Users/ngsn4/AppData/Local/open-webui/data uvx --python 3.11 open-webui@latest serve",
+    "openwebui": "npm run dev:client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.3",
+    "cross-env": "^10.1.0"
+  }
+}
