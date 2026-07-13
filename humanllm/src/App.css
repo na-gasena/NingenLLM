@@ -452,6 +452,22 @@ body {
 .btn-fn:hover:not(:disabled) { background: rgba(227,179,78,0.1); }
 .btn-fn.active { background: rgba(227,179,78,0.16); }
 
+.btn-python {
+  color: #c8a6ff;
+  border-color: #5a4a7a;
+}
+.btn-python::before { content: '⟩ '; }
+.btn-python:hover:not(:disabled) { background: rgba(200,166,255,0.1); }
+.btn-python.active { background: rgba(200,166,255,0.16); }
+
+.btn-search {
+  color: #7ec8ff;
+  border-color: #2d5a7a;
+}
+.btn-search::before { content: '⌕ '; }
+.btn-search:hover:not(:disabled) { background: rgba(126,200,255,0.1); }
+.btn-search.active { background: rgba(126,200,255,0.16); }
+
 /* Tool call inline form */
 .tool-form {
   background: var(--surface2);
@@ -560,3 +576,9 @@ body {
 
 .sh-send  { background: #1f4d57; color: #5ac8e0; border-color: #1f4d57; }
 .sh-send:hover:not(:disabled)  { background: #245e6b; }
+
+.ci-send  { background: #4a3a6b; color: #c8a6ff; border-color: #4a3a6b; }
+.ci-send:hover:not(:disabled)  { background: #574582; }
+
+.ws-send  { background: #1f4a6b; color: #7ec8ff; border-color: #1f4a6b; }
+.ws-send:hover:not(:disabled)  { background: #245a82; }

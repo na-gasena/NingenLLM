@@ -109,6 +109,25 @@ function App() {
     completeRequest(`[shell_command: ${shellScript}]`)
   }, [selectedId, send, completeRequest])
 
+  // Open WebUI の Code Interpreter (Pyodide) を発火する。
+  // <code_interpreter type="code" lang="python">...</code_interpreter> タグを応答本文として送ると、
+  // Open WebUI がブラウザ上の Pyodide で実行し、結果を付けて再度こちらに問い合わせてくる。
+  const handleCodeInterpreter = useCallback((code: string) => {
+    if (!selectedId) return
+    const content = `<code_interpreter type="code" lang="python">\n${code}\n</code_interpreter>`
+    send({ type: 'response', requestId: selectedId, content })
+    completeRequest(`[code_interpreter]\n${code}`)
+  }, [selectedId, send, completeRequest])
+
+  // Open WebUI の Web検索 (builtin tool: search_web) を発火する。
+  // search_web tool_call を返すと、Open WebUI が実際に検索(DuckDuckGo)して結果を付け再問い合わせしてくる。
+  const handleWebSearch = useCallback((query: string) => {
+    if (!selectedId) return
+    const callId = crypto.randomUUID()
+    send({ type: 'function_call', requestId: selectedId, callId, name: 'search_web', arguments: JSON.stringify({ query }) })
+    completeRequest(`[search_web: ${query}]`)
+  }, [selectedId, send, completeRequest])
+
   const statusLabel = {
     connecting: { text: 'Syncing', cls: 'status-connecting' },
     open: { text: 'Online', cls: 'status-open' },
@@ -146,6 +165,8 @@ function App() {
                 onSubmit={handleSubmit}
                 onDelta={handleDelta}
                 onCommand={handleCommand}
+                onCodeInterpreter={handleCodeInterpreter}
+                onWebSearch={handleWebSearch}
                 disabled={false}
               />
             </>

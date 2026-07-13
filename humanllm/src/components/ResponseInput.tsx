@@ -6,6 +6,8 @@ type Props = {
   onSubmit: () => void
   onDelta: () => void
   onCommand: (command: string[], workingDirectory: string | null) => void
+  onCodeInterpreter: (code: string) => void
+  onWebSearch: (query: string) => void
   disabled: boolean
 }
 
@@ -55,13 +57,17 @@ const SNIPPETS: Snippet[] = [
   },
 ]
 
-export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, disabled }: Props) {
+type ToolMode = 'function_call' | 'local_shell_call' | 'code_interpreter' | 'web_search' | null
+
+export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, onCodeInterpreter, onWebSearch, disabled }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [toolMode, setToolMode] = useState<'function_call' | 'local_shell_call' | null>(null)
+  const [toolMode, setToolMode] = useState<ToolMode>(null)
   const [fnName, setFnName] = useState('')
   const [fnArgs, setFnArgs] = useState('{}')
   const [shellCmd, setShellCmd] = useState('')
   const [shellDir, setShellDir] = useState('')
+  const [pyCode, setPyCode] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
 
   useEffect(() => {
@@ -182,7 +188,7 @@ export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, d
     }
   }
 
-  const handleToggleTool = (mode: 'function_call' | 'local_shell_call') => {
+  const handleToggleTool = (mode: Exclude<ToolMode, null>) => {
     setToolMode((prev) => (prev === mode ? null : mode))
   }
 
@@ -193,6 +199,20 @@ export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, d
     onCommand(command, workingDirectory)
     setShellCmd('')
     setShellDir('')
+    setToolMode(null)
+  }
+
+  const handleSendCode = () => {
+    if (!pyCode.trim()) return
+    onCodeInterpreter(pyCode.replace(/\r\n/g, '\n').trim())
+    setPyCode('')
+    setToolMode(null)
+  }
+
+  const handleSendSearch = () => {
+    if (!searchQuery.trim()) return
+    onWebSearch(searchQuery.trim())
+    setSearchQuery('')
     setToolMode(null)
   }
 
@@ -303,8 +323,67 @@ export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, d
         </div>
       )}
 
+      {toolMode === 'code_interpreter' && !disabled && (
+        <div className="tool-form">
+          <div className="tool-form-title">code_interpreter (Pyodide / browser)</div>
+          <textarea
+            className="tool-form-textarea"
+            placeholder={'print(2 ** 100)\n# Open WebUI がブラウザ上の Python で実行し、結果を返してきます'}
+            value={pyCode}
+            onChange={(e) => setPyCode(e.target.value)}
+            rows={5}
+            spellCheck={false}
+          />
+          <div className="tool-form-actions">
+            <button className="tool-form-cancel" onClick={() => setToolMode(null)}>Cancel</button>
+            <button className="tool-form-send ci-send" onClick={handleSendCode} disabled={!pyCode.trim()}>
+              Run Python
+            </button>
+          </div>
+        </div>
+      )}
+
+      {toolMode === 'web_search' && !disabled && (
+        <div className="tool-form">
+          <div className="tool-form-title">search_web (DuckDuckGo)</div>
+          <div className="tool-form-row">
+            <label className="tool-form-label">query</label>
+            <input
+              className="tool-form-input"
+              type="text"
+              placeholder="2026年 ワールドカップ 開催地"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSendSearch() }}
+            />
+          </div>
+          <div className="tool-form-actions">
+            <button className="tool-form-cancel" onClick={() => setToolMode(null)}>Cancel</button>
+            <button className="tool-form-send ws-send" onClick={handleSendSearch} disabled={!searchQuery.trim()}>
+              Search web
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="response-actions">
         <span className="response-hint">Ctrl+Enter to send</span>
+        <button
+          className={`btn-tool-call btn-search${toolMode === 'web_search' ? ' active' : ''}`}
+          onClick={() => handleToggleTool('web_search')}
+          disabled={disabled}
+          title="Web Search (search_web)"
+        >
+          Web Search
+        </button>
+        <button
+          className={`btn-tool-call btn-python${toolMode === 'code_interpreter' ? ' active' : ''}`}
+          onClick={() => handleToggleTool('code_interpreter')}
+          disabled={disabled}
+          title="Code Interpreter (Pyodide)"
+        >
+          Code Interp.
+        </button>
         <button
           className={`btn-tool-call btn-shell${toolMode === 'local_shell_call' ? ' active' : ''}`}
           onClick={() => handleToggleTool('local_shell_call')}
