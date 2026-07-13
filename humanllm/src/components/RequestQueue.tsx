@@ -10,7 +10,7 @@ export function RequestQueue({ requests, selectedId, onSelect }: Props) {
   if (requests.length === 0) {
     return (
       <div className="queue empty">
-        <span className="queue-empty-icon">⏳</span>
+        <span className="queue-empty-icon">·</span>
         <p>No pending requests</p>
       </div>
     )

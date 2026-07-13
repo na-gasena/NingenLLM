@@ -1,7 +1,7 @@
 import type { ChatMessage, ToolCallItem } from '../../shared/types'
 
 type PendingRequest = {
-  sendDelta: (text: string) => void
+  sendDelta: (text: string, isFinal?: boolean) => void
   complete: (fullText: string) => void
   completeTool: ((item: ToolCallItem) => void) | null
   reject: (reason: Error) => void
@@ -15,7 +15,7 @@ const pending = new Map<string, PendingRequest>()
 export function addPending(
   requestId: string,
   messages: ChatMessage[],
-  sendDelta: (text: string) => void,
+  sendDelta: (text: string, isFinal?: boolean) => void,
   complete: (fullText: string) => void,
   reject: (reason: Error) => void,
   completeTool: ((item: ToolCallItem) => void) | null = null,
@@ -45,7 +45,7 @@ export function resolvePending(requestId: string, finalText: string): boolean {
   pending.delete(requestId)
   if (finalText) {
     req.accumulated += finalText
-    req.sendDelta(finalText)
+    req.sendDelta(finalText, true)
   }
   req.complete(req.accumulated)
   return true

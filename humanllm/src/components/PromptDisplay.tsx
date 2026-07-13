@@ -5,9 +5,9 @@ type Props = {
 }
 
 const roleLabel: Record<ChatMessage['role'], string> = {
-  system: '🔧 system',
-  user: '👤 user',
-  assistant: '🤖 assistant',
+  system: '[system]',
+  user: '[client]',
+  assistant: '[you]',
 }
 
 export function PromptDisplay({ messages }: Props) {

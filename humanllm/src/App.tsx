@@ -110,15 +110,15 @@ function App() {
   }, [selectedId, send, completeRequest])
 
   const statusLabel = {
-    connecting: { text: 'Reconnecting…', cls: 'status-connecting' },
-    open: { text: 'Connected', cls: 'status-open' },
-    closed: { text: 'Disconnected', cls: 'status-closed' },
+    connecting: { text: 'Syncing', cls: 'status-connecting' },
+    open: { text: 'Online', cls: 'status-open' },
+    closed: { text: 'Offline', cls: 'status-closed' },
   }[status]
 
   return (
     <div className="layout">
       <header className="header">
-        <h1 className="header-title">humanllm</h1>
+        <h1 className="header-title">humanllm://operator</h1>
         <span className={`header-status ${statusLabel.cls}`}>{statusLabel.text}</span>
       </header>
 
