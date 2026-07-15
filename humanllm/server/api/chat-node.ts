@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http'
 import type { ChatMessage, ToolCallItem } from '../../shared/types'
 import { addPending, rejectPending } from '../store/pendingRequests'
 import { broadcast } from '../ws/clients'
+import { buildRequestMeta } from './requestMeta'
 
 const TIMEOUT_MS = 60 * 60 * 1000 // 1 hour (暫定値、後で調整予定。docs/01_design.md参照)
 
@@ -94,6 +95,7 @@ export async function handleChatNode(req: IncomingMessage, res: ServerResponse):
   const requestId = crypto.randomUUID()
   const id = `chatcmpl-${requestId}`
   const createdAt = Math.floor(Date.now() / 1000)
+  const meta = buildRequestMeta(model, messages, tools)
   console.log(`[chat] model=${model} stream=${stream} tools=${tools?.map((t) => (t.function as Record<string, unknown>)?.name ?? t.name).join(',') ?? 'none'}`)
 
   if (!stream) {
@@ -114,7 +116,7 @@ export async function handleChatNode(req: IncomingMessage, res: ServerResponse):
         reject,
         (item) => resolve({ kind: 'tool', item }),
       )
-      broadcast({ type: 'request', requestId, messages, model, createdAt })
+      broadcast({ type: 'request', requestId, messages, model, createdAt, meta })
       setTimeout(() => {
         const rejected = rejectPending(requestId, new Error('timeout'))
         if (rejected) broadcast({ type: 'timeout', requestId })
@@ -229,7 +231,7 @@ export async function handleChatNode(req: IncomingMessage, res: ServerResponse):
     },
   )
 
-  broadcast({ type: 'request', requestId, messages, model, createdAt })
+  broadcast({ type: 'request', requestId, messages, model, createdAt, meta })
 
   setTimeout(() => {
     const rejected = rejectPending(requestId, new Error('timeout'))

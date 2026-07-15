@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import type { RequestItem } from '../App'
+import { RequestMetaBar } from './RequestMetaBar'
 
 type Props = {
   requests: RequestItem[]
@@ -7,6 +9,13 @@ type Props = {
 }
 
 export function RequestQueue({ requests, selectedId, onSelect }: Props) {
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
   if (requests.length === 0) {
     return (
       <div className="queue empty">
@@ -26,7 +35,7 @@ export function RequestQueue({ requests, selectedId, onSelect }: Props) {
           const lastUserMsg = [...req.messages]
             .reverse()
             .find((m) => m.role === 'user')
-          const elapsed = Math.floor((Date.now() - req.createdAt * 1000) / 1000)
+          const elapsed = Math.max(0, Math.floor((now - req.createdAt * 1000) / 1000))
 
           return (
             <li
@@ -38,7 +47,10 @@ export function RequestQueue({ requests, selectedId, onSelect }: Props) {
                 {lastUserMsg?.content.slice(0, 60) ?? '(no message)'}
                 {(lastUserMsg?.content.length ?? 0) > 60 ? '…' : ''}
               </div>
-              <div className="queue-item-meta">{elapsed}s ago</div>
+              <div className="queue-item-meta">
+                <RequestMetaBar model={req.model} meta={req.meta} compact />
+                <span>{elapsed}s ago</span>
+              </div>
             </li>
           )
         })}

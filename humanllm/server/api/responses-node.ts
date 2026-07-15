@@ -2,8 +2,9 @@ import type { IncomingMessage, ServerResponse } from 'http'
 import type { ChatMessage, ToolCallItem } from '../../shared/types'
 import { addPending, rejectPending } from '../store/pendingRequests'
 import { broadcast } from '../ws/clients'
+import { buildRequestMeta } from './requestMeta'
 
-const TIMEOUT_MS = 5 * 60 * 1000
+const TIMEOUT_MS = 60 * 60 * 1000 // 1 hour (chat-node.ts と揃えた暫定値。docs/01_design.md参照)
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -122,6 +123,12 @@ export async function handleResponsesNode(req: IncomingMessage, res: ServerRespo
   const respId = `resp_${requestId}`
   const msgId = `msg_${requestId}`
   const createdAt = Math.floor(Date.now() / 1000)
+  // instructions も Responses API の system prompt なので、input 側に system があって
+  // 表示用 messages へ重複追加しない場合でもメタ検出からは落とさない。
+  const metaMessages: ChatMessage[] = instructions
+    ? [{ role: 'system', content: instructions }, ...messages]
+    : messages
+  const meta = buildRequestMeta(model, metaMessages, tools)
 
   if (!stream) {
     type CompletionResult = { kind: 'text'; text: string } | { kind: 'tool'; item: ToolCallItem }
@@ -132,7 +139,7 @@ export async function handleResponsesNode(req: IncomingMessage, res: ServerRespo
         reject,
         (item) => resolve({ kind: 'tool', item }),
       )
-      broadcast({ type: 'request', requestId, messages, model, createdAt })
+      broadcast({ type: 'request', requestId, messages, model, createdAt, meta })
       setTimeout(() => {
         const rejected = rejectPending(requestId, new Error('timeout'))
         if (rejected) broadcast({ type: 'timeout', requestId })
@@ -295,7 +302,7 @@ export async function handleResponsesNode(req: IncomingMessage, res: ServerRespo
     },
   )
 
-  broadcast({ type: 'request', requestId, messages, model, createdAt })
+  broadcast({ type: 'request', requestId, messages, model, createdAt, meta })
 
   setTimeout(() => {
     const rejected = rejectPending(requestId, new Error('timeout'))

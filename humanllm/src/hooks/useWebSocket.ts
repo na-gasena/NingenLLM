@@ -8,11 +8,13 @@ export function useWebSocket(onMessage: (msg: WsServerMessage) => void) {
   const [retryCount, setRetryCount] = useState(0)
   const wsRef = useRef<WebSocket | null>(null)
   const onMessageRef = useRef(onMessage)
-  onMessageRef.current = onMessage
+
+  useEffect(() => {
+    onMessageRef.current = onMessage
+  }, [onMessage])
 
   useEffect(() => {
     let intentionallyClosed = false
-    setStatus('connecting')
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`)
     wsRef.current = ws
@@ -22,7 +24,10 @@ export function useWebSocket(onMessage: (msg: WsServerMessage) => void) {
       setStatus('closed')
       // クリーンアップによる意図的なクローズは再接続しない
       if (!intentionallyClosed) {
-        setTimeout(() => setRetryCount((c) => c + 1), 3000)
+        setTimeout(() => {
+          setStatus('connecting')
+          setRetryCount((c) => c + 1)
+        }, 3000)
       }
     })
     ws.addEventListener('error', () => setStatus('closed'))

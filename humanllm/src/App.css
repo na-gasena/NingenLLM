@@ -76,6 +76,129 @@ body {
 }
 @keyframes blink { 50% { opacity: 0; } }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sound-settings {
+  position: relative;
+}
+
+.sound-toggle {
+  padding: 3px 9px;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.sound-toggle:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+.sound-toggle.enabled {
+  color: var(--amber);
+  border-color: #6b5726;
+  background: rgba(227,179,78,0.08);
+}
+
+.sound-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 248px;
+  padding: 12px;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sound-panel-title {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sound-panel-title::before { content: '> '; }
+
+.sound-setting-row,
+.sound-setting-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sound-setting-block {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 6px;
+}
+.sound-setting-block > span {
+  display: flex;
+  justify-content: space-between;
+}
+.sound-setting-block output { color: var(--amber); }
+
+.sound-setting-block input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.sound-setting-block select {
+  width: 100%;
+  padding: 5px 7px;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  outline: none;
+}
+.sound-setting-block select:focus { border-color: var(--accent-dim); }
+
+.sound-power,
+.sound-test {
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sound-power { padding: 3px 7px; }
+.sound-power.enabled { color: var(--amber); border-color: #6b5726; }
+.sound-test {
+  align-self: flex-end;
+  padding: 5px 10px;
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.sound-test:hover { background: rgba(78, 227, 154, 0.08); }
+
 .header-status {
   font-size: 0.72rem;
   padding: 3px 10px;
@@ -207,6 +330,10 @@ body {
   margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 /* History */
@@ -254,6 +381,56 @@ body {
 }
 
 /* Prompt Display */
+.request-meta-bar {
+  min-height: 38px;
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.request-meta-bar.compact {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 5px;
+  min-width: 0;
+}
+
+.request-model {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.request-meta-bar:not(.compact) .request-model { color: var(--text); }
+
+.request-tag {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+.tag-thinking { color: var(--amber); }
+.tag-mini { color: var(--accent); }
+.tag-web { color: #7ec8ff; }
+.tag-python { color: #c8a6ff; }
+
+.thinking-mode-hint {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  border-top: 1px solid #6b5726;
+  background: rgba(227, 179, 78, 0.08);
+  color: var(--amber);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
 .prompt-display {
   flex: 1;
   overflow-y: auto;

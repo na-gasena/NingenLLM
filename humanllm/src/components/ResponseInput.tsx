@@ -57,6 +57,9 @@ const SNIPPETS: Snippet[] = [
   },
 ]
 
+const MAX_IMAGE_DIMENSION = 1024
+const TARGET_IMAGE_BYTES = 100 * 1024
+
 type ToolMode = 'function_call' | 'local_shell_call' | 'code_interpreter' | 'web_search' | null
 
 export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, onCodeInterpreter, onWebSearch, disabled }: Props) {
@@ -109,14 +112,12 @@ export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, o
   // （検証で ~1.2MB の応答は描画されず、数百文字の応答は正常描画を確認）。
   // さらに、画像を 1 つの SSE チャンク（サーバ側 120KB）に収めることで、ストリーミング中の
   // 「未完成の画像Markdownが生テキストとしてチラつく」現象を消せる。そのため data URL を
-  // TARGET_BYTES(=サーバのチャンクサイズより十分小さい値) 以下に確実に抑える。
-  const MAX_DIM = 1024
-  const TARGET_BYTES = 100 * 1024
+  // TARGET_IMAGE_BYTES（サーバのチャンクサイズより十分小さい値）以下に確実に抑える。
   const insertImageFile = useCallback((file: File) => {
     const objectUrl = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
-      const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height))
+      const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(img.width, img.height))
       const w = Math.max(1, Math.round(img.width * scale))
       const h = Math.max(1, Math.round(img.height * scale))
       const canvas = document.createElement('canvas')
@@ -132,7 +133,7 @@ export function ResponseInput({ value, onChange, onSubmit, onDelta, onCommand, o
       let quality = 0.85
       let dataUrl = canvas.toDataURL('image/jpeg', quality)
       // data URL のバイト長がターゲットを超える間、品質を下げて圧縮する
-      while (dataUrl.length > TARGET_BYTES && quality > 0.4) {
+      while (dataUrl.length > TARGET_IMAGE_BYTES && quality > 0.4) {
         quality -= 0.1
         dataUrl = canvas.toDataURL('image/jpeg', quality)
       }

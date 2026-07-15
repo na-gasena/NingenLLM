@@ -1,6 +1,13 @@
 .webui_secret_key
+.cursorrules
+.cursor/
+.agents/
 
+docs/
+data/
 node_modules/
+data/ai-user/
+data/ai-user-browser-profile/
 
 # Logs
 logs

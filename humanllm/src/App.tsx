@@ -1,17 +1,21 @@
-import { useState, useCallback } from 'react'
-import type { WsServerMessage } from '../shared/types'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import type { ChatMessage, RequestMeta, WsServerMessage } from '../shared/types'
 import { useWebSocket } from './hooks/useWebSocket'
+import { useNotificationSound } from './hooks/useNotificationSound'
 import { RequestQueue } from './components/RequestQueue'
 import { HistoryList } from './components/HistoryList'
 import { PromptDisplay } from './components/PromptDisplay'
 import { ResponseInput } from './components/ResponseInput'
+import { RequestMetaBar } from './components/RequestMetaBar'
+import type { SoundType } from './hooks/useNotificationSound'
 import './App.css'
 
 export type RequestItem = {
   requestId: string
-  messages: import('../shared/types').ChatMessage[]
+  messages: ChatMessage[]
   model: string
   createdAt: number
+  meta?: RequestMeta
 }
 
 export type HistoryItem = RequestItem & {
@@ -25,9 +29,38 @@ function App() {
   const [responseText, setResponseText] = useState('')
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
+  const [soundPanelOpen, setSoundPanelOpen] = useState(false)
+  const soundSettingsRef = useRef<HTMLDivElement | null>(null)
+  const {
+    enabled: notificationSoundEnabled,
+    toggle: toggleNotificationSound,
+    play: playNotificationSound,
+    preview: previewNotificationSound,
+    volume: notificationVolume,
+    setVolume: setNotificationVolume,
+    soundType: notificationSoundType,
+    setSoundType: setNotificationSoundType,
+  } = useNotificationSound()
+
+  useEffect(() => {
+    if (!soundPanelOpen) return
+    const closeFromOutside = (event: PointerEvent) => {
+      if (!soundSettingsRef.current?.contains(event.target as Node)) setSoundPanelOpen(false)
+    }
+    const closeFromEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSoundPanelOpen(false)
+    }
+    window.addEventListener('pointerdown', closeFromOutside)
+    window.addEventListener('keydown', closeFromEscape)
+    return () => {
+      window.removeEventListener('pointerdown', closeFromOutside)
+      window.removeEventListener('keydown', closeFromEscape)
+    }
+  }, [soundPanelOpen])
 
   const handleMessage = useCallback((msg: WsServerMessage) => {
     if (msg.type === 'request') {
+      playNotificationSound()
       setRequests((prev) => {
         const next = [...prev, msg]
         if (prev.length === 0) {
@@ -47,7 +80,7 @@ function App() {
         return next
       })
     }
-  }, [])
+  }, [playNotificationSound])
 
   const { status, send } = useWebSocket(handleMessage)
 
@@ -138,7 +171,62 @@ function App() {
     <div className="layout">
       <header className="header">
         <h1 className="header-title">humanllm://operator</h1>
-        <span className={`header-status ${statusLabel.cls}`}>{statusLabel.text}</span>
+        <div className="header-controls">
+          <div className="sound-settings" ref={soundSettingsRef}>
+            <button
+              type="button"
+              className={`sound-toggle ${notificationSoundEnabled ? 'enabled' : ''}`}
+              aria-expanded={soundPanelOpen}
+              aria-controls="sound-settings-panel"
+              onClick={() => setSoundPanelOpen((open) => !open)}
+              title="新しいプロンプトの通知音設定"
+            >
+              {notificationSoundEnabled ? 'SOUND ON' : 'SOUND OFF'}
+            </button>
+            {soundPanelOpen && (
+              <div id="sound-settings-panel" className="sound-panel">
+                <div className="sound-panel-title">notification_audio</div>
+                <div className="sound-setting-row">
+                  <span>power</span>
+                  <button
+                    type="button"
+                    className={`sound-power ${notificationSoundEnabled ? 'enabled' : ''}`}
+                    aria-pressed={notificationSoundEnabled}
+                    onClick={toggleNotificationSound}
+                  >
+                    [{notificationSoundEnabled ? 'ON' : 'OFF'}]
+                  </button>
+                </div>
+                <label className="sound-setting-block">
+                  <span>volume <output>{Math.round(notificationVolume * 100)}%</output></span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={Math.round(notificationVolume * 100)}
+                    onChange={(event) => setNotificationVolume(Number(event.target.value) / 100)}
+                  />
+                </label>
+                <label className="sound-setting-block">
+                  <span>preset</span>
+                  <select
+                    value={notificationSoundType}
+                    onChange={(event) => setNotificationSoundType(event.target.value as SoundType)}
+                  >
+                    <option value="chime">chime</option>
+                    <option value="bell">bell</option>
+                    <option value="alarm">alarm</option>
+                    <option value="retro">retro</option>
+                  </select>
+                </label>
+                <button type="button" className="sound-test" onClick={previewNotificationSound}>
+                  [TEST]
+                </button>
+              </div>
+            )}
+          </div>
+          <span className={`header-status ${statusLabel.cls}`}>{statusLabel.text}</span>
+        </div>
       </header>
 
       <div className="main">
@@ -158,7 +246,13 @@ function App() {
         <section className="content">
           {selectedRequest ? (
             <>
+              <RequestMetaBar model={selectedRequest.model} meta={selectedRequest.meta} />
               <PromptDisplay messages={selectedRequest.messages} />
+              {selectedRequest.meta?.modelMode === 'thinking' && (
+                <div className="thinking-mode-hint">
+                  thinking モデル: [Send progress] で思考の途中経過を流すことが期待されています
+                </div>
+              )}
               <ResponseInput
                 value={responseText}
                 onChange={setResponseText}
@@ -171,12 +265,15 @@ function App() {
               />
             </>
           ) : selectedHistory ? (
-            <PromptDisplay
-              messages={[
-                ...selectedHistory.messages,
-                { role: 'assistant', content: selectedHistory.response },
-              ]}
-            />
+            <>
+              <RequestMetaBar model={selectedHistory.model} meta={selectedHistory.meta} />
+              <PromptDisplay
+                messages={[
+                  ...selectedHistory.messages,
+                  { role: 'assistant', content: selectedHistory.response },
+                ]}
+              />
+            </>
           ) : (
             <div className="content-empty">
               <p>Waiting for an API request…</p>

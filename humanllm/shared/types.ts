@@ -7,6 +7,13 @@ export type ToolCallItem =
   | { type: 'function_call'; callId: string; name: string; arguments: string }
   | { type: 'local_shell_call'; callId: string; command: string[]; workingDirectory: string | null }
 
+export type RequestMeta = {
+  webSearch: boolean
+  codeInterpreter: boolean
+  toolNames: string[]
+  modelMode?: 'thinking' | 'mini'
+}
+
 // Server → Frontend
 export type WsRequestMessage = {
   type: 'request'
@@ -14,6 +21,7 @@ export type WsRequestMessage = {
   messages: ChatMessage[]
   model: string
   createdAt: number
+  meta?: RequestMeta
 }
 
 export type WsTimeoutMessage = {

@@ -5,10 +5,20 @@
     "dev": "concurrently -n humanllm,webui -c cyan,magenta \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm --prefix humanllm run dev",
     "dev:client": "cross-env DATA_DIR=C:/Users/ngsn4/AppData/Local/open-webui/data uvx --python 3.11 open-webui@latest serve",
-    "openwebui": "npm run dev:client"
+    "openwebui": "npm run dev:client",
+    "tunnel": "node scripts/tunnel.js",
+    "ai-user": "node scripts/ai-user.js",
+    "ai-user:claude": "cross-env AI_PROVIDER=anthropic node scripts/ai-user.js",
+    "ai-user:codex": "cross-env AI_PROVIDER=codex node scripts/ai-user.js",
+    "ai-user:claude:webui": "cross-env AI_PROVIDER=anthropic AI_USER_TRANSPORT=webui node scripts/ai-user.js",
+    "ai-user:codex:webui": "cross-env AI_PROVIDER=codex AI_USER_TRANSPORT=webui node scripts/ai-user.js"
   },
   "devDependencies": {
     "concurrently": "^9.2.3",
     "cross-env": "^10.1.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.111.0",
+    "playwright-core": "^1.61.1"
   }
 }
